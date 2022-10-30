@@ -13,3 +13,4 @@ The code is organised as follows:
 * `results/` contains an unorganised and incomplete collection of results from the experiments.
 * `WALS/` contains the implementation of a matrix factorisation-based recommender system, adapted from a previous project.
 * `KGCN/` contains an adaptation of [KGCN-pytorch](https://github.com/zzaebok/KGCN-pytorch) to work on this specific MovieLens knowledge graph.
+* `report/` contains the portfolio for the project.

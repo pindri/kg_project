@@ -1,0 +1,4 @@
+figures/portfolio-figure0.pdf: data/train_loss.csv
+figures/portfolio-figure0.pdf: data/train_loss.csv
+figures/portfolio-figure0.pdf: data/train_perc.csv
+figures/portfolio-figure0.pdf: data/train_perc.csv
