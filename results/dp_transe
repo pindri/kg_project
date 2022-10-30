@@ -1,0 +1,49 @@
+100
+200
+	 train non zero fraction: 0.4793475639170285
+epoch: 1
+100
+200
+	 train non zero fraction: 0.40822479498311626
+epoch: 2
+100
+200
+	 train non zero fraction: 0.3768994211287988
+epoch: 3
+100
+200
+	 train non zero fraction: 0.36049807042932946
+epoch: 4
+100
+200
+	 train non zero fraction: 0.34976483357452964
+Executed 'DP-TransE training'.  Elapsed time: 3253.472073s
+epoch: 0
+100
+200
+	 train non zero fraction: 0.3428605885190545
+epoch: 1
+100
+200
+	 train non zero fraction: 0.32866015436565366
+epoch: 2
+100
+200
+	 train non zero fraction: 0.32866015436565366
+epoch: 3
+100
+200
+	 train non zero fraction: 0.32549445248432224
+epoch: 4
+100
+200
+	 train non zero fraction: 0.31696213217559094
+Executed 'DP-TransE training'.  Elapsed time: 2903.280027s
+Epsilon
+0.9584085158564951
+
+
+all precision
+0.008
+feedback precision
+0.009

@@ -1,0 +1,44 @@
+epoch: 0
+100
+200
+	 train non zero fraction: 0.4772672455378678
+epoch: 1
+100
+200
+	 train non zero fraction: 0.41181259044862517
+epoch: 2
+100
+200
+	 train non zero fraction: 0.3796731789676797
+epoch: 3
+100
+200
+	 train non zero fraction: 0.3617342016401351
+epoch: 4
+100
+200
+	 train non zero fraction: 0.3524481427882296
+epoch: 5
+100
+200
+	 train non zero fraction: 0.34346357935359384
+epoch: 6
+100
+200
+	 train non zero fraction: 0.33475036179450074
+epoch: 7
+100
+200
+	 train non zero fraction: 0.3273034249879402
+epoch: 8
+100
+200
+	 train non zero fraction: 0.31871080559575493
+epoch: 9
+100
+200
+	 train non zero fraction: 0.3155752532561505
+Executed 'DP-TransM training'.  Elapsed time: 5607.763006s
+
+
+0.9584085158564951
