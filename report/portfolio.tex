@@ -15,12 +15,12 @@ For this project, the focus is on movie recommendation.
 
 Collaborative filtering \parencite{schafer2007collaborative}, a commonly adopted technique to tackle the recommendation task, is concerned with evaluating and recommending items by means of the opinion of other users.
 Collaborative filtering based recommendation has proved to be effective \parencite{schafer2007collaborative, herlocker2004evaluating} and can utilise a variety of unstructured data such item reviews or ratings.
-However, it is not well suited to model additional information on relationships between items and users.
+However, traditional approaches may not be well suited to model additional information on relationships between items and users.
 
-Knowledge graph (KG) embeddings \parencite{wang2017knowledge} solve this problem by embedding an heterogeneous set of entities and relationships into a unified space (e.g., a continuous vector space) while preserving the structure of the KG itself.
-This allows for a richer characterisation of the interactions between users and items and can lead to better recommendation performance.
+Knowledge graph (KG) embeddings \parencite{wang2017knowledge} address this problem by embedding an heterogeneous set of entities and relationships into a unified space (e.g., a continuous vector space) while preserving the structure of the KG itself.
+This allows for a richer characterisation of the interactions between users and items and can lead to better recommendations.
 
-This project will focus on the task of movie recommendation \lo{11} using KG embedding, providing a comparison between the various embeddings adopted, a matrix factorisation, and a Graph Neural Network-based approach.
+This project\footnote{Code and data for the project are available at \url{https://github.com/pindri/kg_project}.} will focus on the task of movie recommendation \lo{11} using KG embedding, providing a comparison between the various embeddings adopted, a matrix factorisation, and a Graph Neural Network based approach.
 Additionally, privacy concerns and differentially private KG embeddings will be discussed.
 
 
@@ -40,16 +40,16 @@ The discussion will be framed in the context of movie recommendation.
 \subsection{Collaborative filtering and matrix factorisation}\label{sec:factorisation}
 
 Consider a \emph{feedback} or \emph{ratings} matrix $R$, where the position $R_{ij}$ contains the rating (e.g., on a scale of $1$ to $5$, or as a binary value to denote appreciation for the movie) of user $i$ for movie $j$, or $0$ in case there is no rating.
-In this context, recommendation aims at predicting the feedback of user $i$ on the set of movies with with $i$ has not interacted yet. 
+In this context, recommendation aims at predicting the feedback of user $i$ on the set of movies with which $i$ has not interacted yet. 
 Informally, \emph{collaborative filtering} works under the assumptions that two users who share similar taste for a certain set of movies are more likely to have the same opinion on other movies.
 
-More formally, objective is to decompose the ratings matrix $R$ as a low-rank product of two matrices: 
-$$ \underset{\scriptscriptstyle{m \times n}}{R} \approx \widetilde{R} = \underset{\scriptscriptstyle{m\times k}}{X}\underset{\scriptscriptstyle{k\times n}}{Y}$$
-where $U$ and $V$ are $k-$dimensional embeddings for the $m$ users and $n$ movies.
+One of the approaches to tackle this task resorts to matrix factorisation where, more formally, the objective is to decompose the ratings matrix $R$ as a low-rank product of two matrices
+$$ \underset{\scriptscriptstyle{m \times n}}{R} \approx \widetilde{R} = \underset{\scriptscriptstyle{m\times k}}{X}\underset{\scriptscriptstyle{k\times n}}{Y},$$
+where $X$ and $Y$ are $k-$dimensional embeddings for the $m$ users and $n$ movies.
 
 Solving this factorisation problem leads to the objective function
 \begin{equation}\label{eq:wals}
-  \mathcal{L} = \sum_{i, j} c_{ij} (R_{ij} - {x_i^T y_j})^2 + \lambda \left( \sum_i \norm{{x_i}}^2 + \sum_j \norm{{y_j}}^2 \right)
+  \mathcal{L} = \sum_{i, j} c_{ij} (R_{ij} - {x_i^T y_j})^2 + \lambda \left( \sum_i \norm{{x_i}}^2 + \sum_j \norm{{y_j}}^2 \right),
 \end{equation}
 where $c_i = \sum_{i, j}1$ if $R_{ij}>0$, and $x_i$ and $y_j$ are row vectors of $X$ and $Y$.
 This non-convex problem can be solved using the Weighted Alternating Least Squares (WALS) algorithm.
@@ -62,21 +62,21 @@ This approach can be effective and efficient (as WALS can be parallelised), but 
 In contrast, KG embeddings \lo{1} can effectively model multiple relationships between users and items.
 The approach discussed (and implemented, see \cref{sec:implementation}) here follows closely the one presented in \cite{zhang2018learning}.
 
-In particular, let us consider a KG constituted by a set of triplets $(h, l, t)$ where $h$ (head) and $t$ (tail) belong to a set of \emph{entities} and $l$ belongs to a set of relationships.
+Let us consider a KG constituted by a set of triplets $(h, l, t) \in S$ where $h$ (head) and $t$ (tail) belong to a set of \emph{entities} and $l$ belongs to a set of \emph{relationships}.
 
 Following the energy-based model \emph{TransE}\footnotemark{} presented in \cite{bordes2013translating}, the idea is to learn low-dimensional vector embeddings for the triplets such that the functional relationship between the heads $\bv{h}$ and tails $\bv{t}$ corresponds to a translation by the relationships $\bv{l}$.
 That is, in the embedding $\bv{h} + \bv{l} \approx \bv{t}$ should hold.
-The embedding can be learnt by minimising the margin-based loss:
+The embedding can be learnt by minimising the margin-based loss
 \begin{align}\label{eq:transe}
   \mathcal{L} = \sum_{(h, l, t) \in S} \Biggl[ &\sum_{(h', l, t) \in S^h} (\gamma + \norm{\bv{h} + \bv{l} - \bv{t}} - \norm{\bv{h'} + \bv{l} - \bv{t}})_{+} +\\
-                                              & \sum_{(h, l, t') \in S^t} (\gamma + \norm{\bv{h} + \bv{l} - \bv{t}} - \norm{\bv{h} + \bv{l} - \bv{t'}})_{+} \Biggr]\nonumber
+                                              & \sum_{(h, l, t') \in S^t} (\gamma + \norm{\bv{h} + \bv{l} - \bv{t}} - \norm{\bv{h} + \bv{l} - \bv{t'}})_{+} \Biggr]\nonumber,
 \end{align}
 where $\gamma>0$ is the margin, $[x]_+$ denotes the positive part of $x$, and $S^h$ and $S^t$ are corrupted triplets obtained by replacing (respectively) the head and tail entity in the training triplets with random entities.
-Optimisation can be carried out by \emph{stochastic gradient descent} (SGD).
+Optimisation can be carried out using \emph{stochastic gradient descent} (SGD).
 
 \footnotetext{The report will consider TransM \parencite{fan2014transition} as well. As TransE and TransM share many similarities, with differences mainly consisting in the latter considering pre-computed weights for the scoring function, TransM will not be discussed in detail and considerations presented for TransE hold for both approaches.}
 
-Recommendations \lo{9)\\(LO6)\\(LO11} with respect to the relationship of interested can then be obtained by considering the euclidean distance between entities, given the relationship.
+Recommendations \lo{9)\\(LO6)\\(LO11} with respect to the relationship of interest can then be obtained by considering the Euclidean distance between entities, given the relationship.
 For instance, considering a \emph{``feedback''} relationship denoting positive interaction between users and movies, recommendations for user $u_i$ can be produced by finding the movies $v_j$ that minimise 
 \begin{equation}\label{eq:transe_interaction}
   \norm{\bv{u}_i + \bv{l}_{\text{feedback}} - \bv{v}_j}.
@@ -86,15 +86,15 @@ This approach, following the taxonomy in \cite{guo2020survey}, is to be consider
 
 \subsection{Propagation based methods for recommendation}\label{sec:kgcn}
 
-While\lo{3} embedding-based methods take advantage of the semantic relationships between items and users, propagation-based methods aim at capturing complex and high-order relationships between the entities as well.
+While\lo{3} embedding-based methods take advantage of the semantic relationships between items and users, \emph{propagation-based} methods aim at capturing complex and high-order relationships between the entities as well.
 The core principle is that of aggregating embeddings of multi-hop neighbours in the KG to refine the embeddings themselves.
 Often, the implementation is based on Graph Neural Network (GNN) methodologies.
 
 For the scope of the project, we consider the Knowledge Graph Convolutional Network (KGCN) proposed in \cite{wang2019knowledge}.
 Inspired by Graph Convolutional Networks \parencite{zhang2019graph}, KGNN captures structural proximity of entities in the KG by means of an aggregation procedure where the weight of each neighbour is user specific.
-The target is a prediction function that, given the knowledge graph and the user-item interaction matrix, aims at predicting the probability that a certain user will positively interact with a certain item.
+The target is a prediction function that, given the knowledge graph and the user-item interaction matrix, outputs the probability that a certain user will positively interact with a certain item.
 In case of probability larger than $0.5$, the user is predicted to interact with the item.
-The learning task is therefore framed as that of binary classification, where the training data contains both instances where user and item interact and instances where they do not interact, and the testing scenario simply requires to predict whether there will be interaction between any give user-item pair.
+The learning task is therefore framed as a binary classification task, where the training data contains both instances where user and item interact and instances where they do not interact, and the testing scenario simply requires to predict whether there will be interaction between any give user-item pair.
 It should be therefore highlighted that the learning task optimises for low classification error, and not in particular for a ranking in the probability of interaction.
 A ranking of the predicted items can nevertheless be given by sorting the probability of interaction and recommending the items with higher probability.
 
@@ -105,8 +105,8 @@ Differential Privacy (DP) \parencite{dwork2008differential, dwork2014algorithmic
 This is achieved by means of a randomized algorithm $\mathcal{M}$, a mechanism that acts on datasets.
 Considering two datasets $D$ and $D'$ with the latter differing from the former for a single record (i.e., being a \emph{neighbouring} dataset, denoted as $\norm{D - D'} = 1$), DP assures that executing $\mathcal{M}$ over $D$ or $D'$ gives similar results, thus protecting the presence/absence of a record.
 
-More formally, an algorithm $\mathcal{M}$ is $(\varepsilon, \delta)$-differentially private if for all $E \subseteq \text{Range}(\mathcal{M})$ and for all $D$, $D'$ such that $\norm{D - D'} = 1$:
-$$ \Pr[\mathcal{M}(D) \in E] \le \exp{(\varepsilon)}\Pr[\mathcal{M}(D') \in E] + \delta$$
+More formally, an algorithm $\mathcal{M}$ is $(\varepsilon, \delta)$-differentially private if for all $E \subseteq \text{Range}(\mathcal{M})$ and for all $D$, $D'$ such that $\norm{D - D'} = 1$
+$$ \Pr[\mathcal{M}(D) \in E] \le \exp{(\varepsilon)}\Pr[\mathcal{M}(D') \in E] + \delta,$$
 where the probability space is over the coin flips of the mechanism $\mathcal{M}$.
 
 Intuitively, this assures that, with high probability, we cannot distinguish the output of our algorithm over two similar datasets and we can thus not say for certain whether a specific record is part of the dataset.
@@ -137,13 +137,13 @@ Considerations on the evolution and scalability of the approach are deferred to 
 The MovieLens dataset is a dataset collected by GroupsLens Research which gathers movie ratings for tens of thousands of movies and users.
 In particular, a reduced version\footnote{Available at \href{https://grouplens.org/datasets/movielens/latest/}{https://grouplens.org/datasets/movielens/latest/}.} of the full dataset was used for this project.
 Similarly to what described in \cref{sec:factorisation}, the dataset essentially consists of a matrix of user-movie ratings.
-Specifically, MovieLens ratings are on a scale from one to five.
+Specifically, MovieLens ratings are on a scale from \num{1} to \num{5}.
 
-To enrich the information present in MovieLens, external sources can be used to obtain metadata information for the reviews, such as the name of the director of the movie the reviews considers.
+To enrich the information present in MovieLens, external sources can be used to obtain metadata information for the ratings, such as the name of the director of the movie the ratings refer to.
 DBpedia \parencite{auer2007dbpedia} is a project that makes available structured \lo{4} content extracted from Wikipedia.
 The properties of the various entities stored in DBpedia are classified by means of a consistent ontology and DBpedia allows for queries of properties and relationship obtained from Wikipedia articles.
 Specifically, DBpedia adopts the Resource Description Framework (RDF) as a data model to represent the extracted information as semantic triplets.
-In particular, and similarly to the formalism introduced \cref{sec:kgrecom}, the nodes of the graph are the head and tail of the triplet (called \emph{subject} and \emph{object}, in RDF terminology) and the central element of the triple (\emph{predicate}) is an edge in the KG.
+In particular, and similarly to the formalism introduced \cref{sec:kgrecom}, the nodes of the graph are the head and tail of the triplet (called \emph{subject} and \emph{object}, in RDF terminology) and the central element of the triplet (\emph{predicate}) is an edge in the KG.
 Data stored in RDF format can then be queried by means of specific query languages such as SPARQL, which allow for queries to be formulated in terms of triplets.
 A parallelism can here be drawn to non-relational databases, that is, databases which rely on non-tabular storage of data and which often support data retrieval via queries of the form (document-)key-value.
 Both RDF and non-relational databases\footnote{It should be noted that RDF databases can be considered as a subclass of graph databases and so, in turn, as part of the family of non-relational databases.} should instead be compared against the more rigid and structured relational databases, which relies on well defined tables and relationships between tables.
@@ -152,8 +152,8 @@ Despite the better seek time achievable by relational databases by means of indi
 Specifically, mappings \lo{7} from MovieLens to DBpedia were obtained by \cite{ostuni2013top} and used by \cite{palumbo2017entity2rec} to formulate SPARQL queries for the DBpedia endpoint.
 \cite{palumbo2017entity2rec} make available the results of the queries, which consist in a series of subgraphs, one for each of the properties (such as director, composer) queried.
 For this project, the subgraphs were merged into a KG (\texttt{data\_builder.py}) and indices were generated for the various entities.
-In particular, a \emph{feedback} relationship is used to denote a connection between a user and a movie when the user has reviewed the movie with four or more stars.
-The result KG consists of text file containing all the triplets (including the feedback one).
+In particular, a \emph{feedback} relationship is used to denote a connection between a user and a movie when the user has reviewed the movie with a score of \num{4} or more.
+The resulting KG consists of a text file containing all the triplets (including the feedback one).
 In summary, the creation of the KG consists mainly of a data linkage operation between MovieLens and DBpedia, which is much simplified by the fact that entities in MovieLens have been stable for some years and that mappings to DBpedia were made available by \cite{ostuni2013top}.
 
 
@@ -165,25 +165,25 @@ The movie recommendation solutions described in \cref{sec:kgrecom} were implemen
 In particular, \texttt{models.py} provides a PyTorch implementation of TransE and TransM and \texttt{main.ipynb} defines the data loading, training, and testing routines necessary for the recommendation task.
 
 \texttt{WALS/} contains a Python implementation of the WALS algorithm for matrix factorisation described in \cref{sec:factorisation}.
-It should be noted that most of this code was produced as a result of another project, and that adaptation were sufficient to apply it to this task and dataset.
+It should be noted that most of this code was produced as a result of a past project, and that adaptations were sufficient to apply it to this task and dataset.
 
 \texttt{KGCN/} \lo{3} contains an implementation of Knowledge Graph Convolutional Networks (KGCN) \parencite{wang2019knowledge}.
 The solution is an adaptation of the Pytorch implementation in \url{https://github.com/zzaebok/KGCN-pytorch}.
-Concerning the adaptations, \texttt{KGCN/main\_kgcn.ipynb} introduces a pre-processing routines to adapt the KG obtained in \cref{sec:creation} and make it usable with KGCN, as well as testing/evaluation routines to compute recommendation metrics.
+Concerning the adaptations, \texttt{KGCN/main\_kgcn.ipynb} introduces pre-processing routines to adapt the KG obtained in \cref{sec:creation} and make it usable with KGCN, as well as testing/evaluation routines to compute recommendation metrics.
 
 
 
 \subsection{Differentially private embeddings}
 
 As described in \cref{sec:dp}, the application of DP\lo{12} to KG embeddings requires the embeddings to be gradient-separable.
-Therefore, a differentially private version of the embedding (and thus recommendation) procedure has been implemented for TransE and TransM only.
+Therefore, a differentially private version of the embedding (and thus of the recommendation) procedure has been implemented for TransE and TransM only.
 
 More in detail, achieving DP-SGD requires additional operations with respect to standard SGD, namely, gradient clipping\footnote{It should be mentioned that gradient clipping is commonly used in vanilla SGD-like optimisation processes as well, as it is beneficial against exploding and vanishing gradients \parencite{pascanu2013difficulty}.} and the addition to noise on the gradients.
-Intuitively, DP aims at limiting the influence that single points (triplets, in this specific case) can have on gradients and, consequently, on the optimisation process.
+Intuitively, DP aims at limiting the influence that single points (triplets, in this specific case) can have on gradients and, consequently, on the optimisation process and the predictions.
 Once a maximum value for gradients has been decided, noise helps obscuring the individual contributions of the points.
 With DP-SGD, each optimisation step is $(\varepsilon, \delta)$-differentially private: because of the composition properties of DP \parencite{dwork2014algorithmic} the whole procedure is then differentially private.
 
-Concerning implementation aspects, a DP private version of TransE and TransM has been obtained using the private wrapper provided by the \href{https://opacus.ai/}{Opacus} Python library.
+Concerning implementation aspects, a DP private version of TransE and TransM has been obtained using a wrapper provided by the \href{https://opacus.ai/}{Opacus} Python library.
 Opacus includes utilities for privacy accounting, so that the privacy budget $\varepsilon$ can be obtained once the models have been trained.
 
 
@@ -195,9 +195,9 @@ This section describes the experimental setup and presents the results of experi
 
 \subsection{Dataset and experimental setup}
 
-Experiments were carried out on an 11th Gen Intel i7-1165G7 CPU, with 32GB of RAM available.
+Experiments were carried out on an 11th Gen Intel i7-1165G7 CPU with 32GB of RAM.
 
-\paragraph{Dataset} Due to hardware and time constraints, a subset of the relations obtained in \cref{sec:creation} was used for the experiments.
+\paragraph{Dataset} Due to hardware and time constraints, a subset of the relationships obtained in \cref{sec:creation} was used for the experiments.
 Specifically, only the \emph{feedback}, \emph{director}, \emph{writer}, and \emph{music composer} relationships were considered, and only the \emph{user}, \emph{movie}, and \emph{people} entities were considered.
 This choice significantly reduces the size of the KG and allows for quicker experimentation especially without the need of a GPU.
 The feedback relationship and, equivalently, the ratings matrix, has been obtained from \href{https://grouplens.org/datasets/movielens/latest/}{ml-latest-small}, a subset of the MovieLens dataset containing approximately \num{100000} ratings for \num{9000} movies and \num{600} users.
@@ -206,7 +206,7 @@ Datasets where split, user-wise, in training, testing, and validation sets follo
 \paragraph{Parameter setting} The initialisation of the embeddings follows that of the original TransE and TransM articles \parencite{bordes2013translating, fan2014transition}.
 After some experimentation, the dimensionality of the embedding space was set to $k=50$, the margin in \cref{eq:transe} to $\gamma =1$, and the learning rate to $\text{lr} = 0.1$.
 The optimisation was performed using (DP-)SGD with a batch size of \num{128} for \num{20} epochs for the standard implementations and for \num{10} epochs for the DP ones.
-Concerting DP specific parameters, the maximum gradient norm was set to \num{1} and $\delta = \frac{\text{batch size}}{\text{\# training instances}}$.
+Concerning DP specific parameters, the maximum gradient norm was set to \num{1} and $\delta = \frac{\text{batch size}}{\text{\# training instances}}$ \parencite{lee2011much}.
 Concerning the KGCN implementation, default values proposed by the existing PyTorch implementation where used.
 Concerning the WALS, the algorithm was trained for 10 iterations and, in \cref{eq:wals}, $\lambda = 0.3$.
 
@@ -215,13 +215,12 @@ Concerning the WALS, the algorithm was trained for 10 iterations and, in \cref{e
 \subsection{Recommendation}
 
 KG-based recommendation can naturally be thought as a link prediction\lo{9} task on the graph \parencite{guo2020survey}.
+For the TransE and TransM implementation presented in \cref{sec:kgrecom}, the task is that of finding triplets that minimise the distance between entities and relationships described in \cref{eq:transe_interaction}.
+Considering all possible combinations of entities and relationships, performance can then be assessed by counting how many of the triplets that show minimum distance are effectively present in the test set. 
+Performance in this information retrieval task can evaluated by a precision measure.
+In particular, we consider (mean) precision at 10, that is, the (mean) number of relevant triplets found among the top 10 retrieved triplets (i.e., the 10 triplets that minimise \cref{eq:transe_interaction} for each batch of data considered).
 
-For the TransE and TransM implementation presented in \cref{sec:kgrecom}, the task is that of finding triplets that minimise the interaction between entities and relationships described in \cref{eq:transe_interaction}.
-Considering all possible combinations of entities and relationships, performance can then be assessed by counting how many of the triplets that show minimum interaction are effectively present in the test set. 
-Performance in this information retrieval task can evaluated by precision measure.
-In particular, we consider (mean) precision at 10, and so (mean) the number of relevant triplets found among the top 10 retrieved triplets (i.e., the 10 triplets that minimise \cref{eq:transe_interaction} for each batch of data considered).
-
-The training procedure can be monitored by means of the loss value in \cref{eq:transe} and by the percentage of training triplets for which a minimisation of the interaction in \cref{eq:transe_interaction} has not been achieved yet.
+The training procedure can be monitored by means of the loss value in \cref{eq:transe} and by the percentage of training triplets for which a minimisation of the distance in \cref{eq:transe_interaction} has not been achieved yet.
 
 \begin{figure}[htbp]
   \centering
@@ -243,11 +242,11 @@ The training procedure can be monitored by means of the loss value in \cref{eq:t
           \addlegendentry{\scriptsize TransM}
       \end{groupplot}
   \end{tikzpicture}
-  \caption{Training loss and fraction of non-zero interaction triplets for TransE and TransM.}
+  \caption{Training loss and fraction of non-zero distance triplets for TransE and TransM.}
 \end{figure}
 
-It can be observed that, despite a jagged trend for the loss values, the fraction of non-zero interaction triplets gradually approaches a fraction of $\approx 0.1$.
-The optimisation with DP-SGD results in similar trends but with the fraction of non-zero interaction triplets approaching a significantly worse value of $\approx 0.3$.
+It can be observed that, despite a jagged trend for the loss values, the fraction of non-zero distance triplets gradually approaches a fraction of $\approx 0.1$.
+The optimisation with DP-SGD results in similar trends but with the fraction of non-zero distance triplets approaching a significantly worse value of $\approx 0.3$.
 
 \begin{table}[htbp]
   \centering
@@ -262,15 +261,15 @@ DP-TransM&$\approx{90}$&$\approx{1}$&0.9 (0.9)\\
 KGCN&$\approx 15$&$\approx 0.5$&10.4\\
 WALS&$\approx{50}$&$\approx{2}$&2.7\\
 \end{tabular}
-\caption{Precision at 10 for the various approaches (values as \% numbers). The precision reported in parentheses refers to using a test set that contains the \emph{feedback} relationship only. It should be pointed out that time measures are likely imprecise and are to be taken in terms of order of magnitude.}
+\caption{Precision at 10 for the various approaches (values as \% numbers). The precision reported for the KG-based methods refers to predicting triplets considering \emph{all} relationships, with the values in parentheses referring instead to a test set that contains the \emph{feedback} relationship only. It should be pointed out that time measures are likely imprecise and are to be taken in terms of order of magnitude.}
 \label{tab:comparison}
 \end{table}
 
-\cref{tab:comparison} summarises the results of the experiments.
+\cref{tab:comparison} summarises the results of the experiments\lo{9}.
 TransE and TransM perform quite similarly, suggesting pertinent triplets in more than one third of the top 10 recommendations.
-Particularly, the movie recommendation task (denoted in parenthesis in the table), i.e., when predictions are computed only for the \emph{feedback} relationship, reach a precision of $\approx{40}\%$.
+Particularly, the movie recommendation task (denoted in parenthesis in the table), i.e., when predictions are computed only for the \emph{feedback} relationship, reaches a precision of $\approx{40}\%$.
 
-Performance decreases drastically when DP is introduced to the methods: the models take significantly longer to train (due to the additional procedures necessary to ensure DP and monitor the privacy budget) and perform radically worse, essentially providing no good recommendations.
+Performance decreases drastically when DP is introduced to the methods: the models take significantly longer to train (due to the additional procedures necessary to ensure DP and monitor the privacy budget) and perform radically worse, essentially providing no good recommendations.\footnote{On the positive side, the privacy budget required by the two models results to be $\varepsilon \approx 1$, which in turn is commonly accepted as a value that provides a good balance between utility and privacy \parencite{lee2011much}.}
 
 Despite being optimised for binary classification, and thus not for ranking results, KGCN performs well in the top 10 recommendation task.
 WALS is bested by the embedding approaches and takes significantly longer to train, with the provided implementation.
@@ -293,25 +292,25 @@ The non-fully private solution has however not been implemented, and thus the im
 Once\lo{8} the recommender system has been trained on the KG, it is interesting to consider how could the KG and the system itself be evolved and modified.
 Firstly, it should be noted that the task at hand, that is, recommendation, can be easily framed as a KG completion task and, more specifically, as a link prediction method.
 \cref{tab:comparison} shows that the proposed method performs well in this task, adding relevant triplets in more than one third of the test instances.
-As discussed in \cref{sec:kgrecom}, entity (and, similarly, relationship) prediction can be obtained by finding triples that minimise \cref{eq:transe_interaction}.
+As discussed in \cref{sec:kgrecom}, entity (and, similarly, relationship) prediction can be obtained by finding triplets that minimise \cref{eq:transe_interaction}.
 The project has focused on entity (movie) prediction for the \emph{feedback} relationship, but similar approaches can be easily applied to prediction of other entities or relationships.
-Pragmatically, a new-found triplet could then easily be added to the text file storing the KG.
+Pragmatically, a new-found triplet could then be added to the text file storing the KG.
 Assuming new triplets are at some point available, the model itself could be updated by means of embedding techniques that update the embedding using online learning algorithms such as the one proposed in \cite{wu2022efficiently}.
 For what concerns modifications in the underlying schema of the KG, in this specific case that would correspond to modifications of the DBpedia RDF schema: RDF schemas allow modifications including the addition and removal of properties and classes.
 
 As far as reasoning at scale\lo{6)\\(LO5} is concerned, the recommendation task scales at least linearly with the number of entities in the graph as the energy function for TransE/TransM must be computed for all possible movies in the KG.
 As the resulting scores must then be sorted in order to provide recommendations, providing recommendations scales at least as $n\log{n}$.
 For more considerations on scalable reasoning, however, potential architecture needs have to be addressed.
-Specifically, a KG-based recommender system would likely include KG as part of the middleware of the overall recommendation system (not dissimilarly to the approach followed by this project).
-The underlying, basic data for a larger scale implementation would need to include access to DBpedia and to user-movie interaction.
+Specifically, a KG-based recommender system would likely include the KG as part of the middleware of the overall recommendation system (not dissimilarly to the approach followed by this project).
+The underlying, basic data for a larger scale implementation would need to include access to DBpedia and to user-movie interactions.
 As mentioned, DBpedia provides endpoints and can be queried with SPARQL, and new triplets can be appended to the KG file.
-In a real-world deployment, DBpedia could be periodically queried for new movies, and the KG consequently periodically updated.
+In a real-world deployment, DBpedia could be periodically queried for new movies and the KG consequently periodically updated.
 In parallel, user data and ratings could be stored in a (distributed) relational database for quick (parallel) access to information, as the database schema describing users, their properties, and ratings can be rigid and is not expected to change.
 This database can then be queried using an SQL variant.
 Together with storing new information, data pre-processing could also be performed offline and periodically, to update the KG and user information (i.e., merging new information with the pre-existing one).
 To deal with new users or new movies, common cold-start solutions would include, e.g., recommending popular movies to new users.
 Concerning the learning and analysis at scale, distributed (deep) learning and data processing (such as Spark) frameworks exist, with some approaches combining big data access and (deep) learning in a single framework \parencite{kim2016deepspark}.
-Recent results \parencite{zheng2020dgl} consider, specifically, training KG embeddings at scale, introducing optimisations to improve data locality and parallelisation.
+Recent results \parencite{zheng2020dgl} consider, specifically, training KG embeddings at scale and introducing optimisations to improve data locality and parallelisation.
 Orchestration systems such as Kubernetes can finally be used to handle deployment, management, and scaling of the final application in automated ways.
 
 
@@ -319,10 +318,10 @@ Orchestration systems such as Kubernetes can finally be used to handle deploymen
 
 One of the drawbacks of embedding based recommender systems is that, while easy to implement, they can result in embeddings which are not well suited for the recommendation task.
 Indeed, joint-learning methods that jointly learn the embedding and the recommendation module can provide better performance \parencite{guo2020survey}.
-Recent developments, moreover, exploit attention mechanism in GNN frameworks to model user preferences. 
+Recent developments, particularly, exploit attention mechanism in GNN frameworks to model user preferences. 
 
 In\lo{10} terms of possible applications to other domains, it is easy to picture applications to the financial domain.
-Recommender systems (and the task of link prediction they entail) is in fact immediately applicable to, e.g., the banking sector.
+Recommender systems (and the task of link prediction they entail) are, in fact, immediately applicable to, e.g., the banking sector.
 A KG-based recommender system could, for instance, be a component in a conversational banking tool.
 Conversational banking tools allow the user to interact with digital banking platforms in a conversational manner (for instance, via text), but easily become too complex for traditional, rule-based approaches.
 By means of a KG, instead, user's needs could be modelled and recommendations for, e.g., the best insurance package or investment could be based on the contextual information available to the bank and on previous interactions of other users. 
@@ -339,7 +338,7 @@ A variety of recommender systems algorithms and techniques has since been develo
 
 More recently, several approaches that employ KGs have been proposed \parencite{grad2015recommendations, guo2020survey}.
 In particular, some several approaches are embedding-based, and thus focus on learning useful embeddings for movies, users, and their interaction \parencite{palumbo2017entity2rec, zhang2018learning}.
-Additionally, some efforts enrich datasets with linked data \parencite{ostuni2013top}, or employ Graph Neural Networks (GNNs) to produce the embedding and train the recommender system end-to-end \parencite{wang2019knowledge}.
+Additionally, some efforts enrich datasets with linked data \parencite{ostuni2013top}, or employ GNNs to produce the embedding and train the recommender system end-to-end \parencite{wang2019knowledge}.
 
 
 
@@ -351,7 +350,6 @@ Additionally, the performance of a differentially private version of the recomme
 Finally, considerations on how the recommender system could be deployed as a service and kept up to date were presented, describing potential approaches to architecture, scalable reasoning, and application to other domains.
 
 
-\section{References}
 \printbibliography
 
 \end{document}
